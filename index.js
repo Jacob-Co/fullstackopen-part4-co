@@ -1,7 +1,11 @@
-const express = require('express')
-const app = express()
-const cors = require('cors')
-const mongoose = require('mongoose')
+// 3rd Party Modules
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const mongoose = require('mongoose');
+
+// Local Modules
+const config = require('./utils/config');
 
 const blogSchema = new mongoose.Schema({
   title: String,
@@ -12,7 +16,7 @@ const blogSchema = new mongoose.Schema({
 
 const Blog = mongoose.model('Blog', blogSchema)
 
-const mongoUrl = 'mongodb+srv://carrot:impact02@cluster0.iholn.mongodb.net/blog-app?retryWrites=true&w=majority'
+const mongoUrl = config.MONGODB_URI;
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
 
 app.use(cors())
@@ -36,7 +40,6 @@ app.post('/api/blogs', (request, response) => {
     })
 })
 
-const PORT = 3001
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+app.listen(config.PORT, () => {
+  console.log(`Server running on port ${config.PORT}`)
 })
