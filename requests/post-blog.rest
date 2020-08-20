@@ -1,0 +1,9 @@
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+
+{
+  "title": "How to become a data engineer",
+  "author": "Jacob",
+  "url": "example.com",
+  "likes": 100000
+}
