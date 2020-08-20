@@ -2,8 +2,8 @@ POST http://localhost:3001/api/blogs
 Content-Type: application/json
 
 {
-  "title": "How to raise a happy Bunny",
-  "author": "Isabel",
-  "url": "bunny.com",
-  "likes": 9900000
+  "title": "Counting PIE",
+  "author": "Einstein",
+  "url": "pie.com",
+  "likes": 403232
 }

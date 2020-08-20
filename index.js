@@ -5,6 +5,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 // Local Modules
+require('./app');
 const config = require('./utils/config');
 
 const blogSchema = new mongoose.Schema({
@@ -16,8 +17,7 @@ const blogSchema = new mongoose.Schema({
 
 const Blog = mongoose.model('Blog', blogSchema)
 
-const mongoUrl = config.MONGODB_URI;
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
+
 
 app.use(cors())
 app.use(express.json())
