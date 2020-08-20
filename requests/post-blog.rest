@@ -2,8 +2,8 @@ POST http://localhost:3001/api/blogs
 Content-Type: application/json
 
 {
-  "title": "Counting PIE",
-  "author": "Einstein",
-  "url": "pie.com",
-  "likes": 403232
+  "title": "Selling Cookies",
+  "author": "Scouts",
+  "url": "scouts.com",
+  "likes": 94003232
 }
