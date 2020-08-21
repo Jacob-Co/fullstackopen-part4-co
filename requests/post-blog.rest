@@ -2,7 +2,7 @@ POST http://localhost:3001/api/blogs
 Content-Type: application/json
 
 {
-  "title": "Growing Plants the Right Way",
+  "title": "Growing Plants the Right Way pt. 2",
   "author": "Green Thumbs",
   "url": "plants.com",
   "likes": 8888
