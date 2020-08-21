@@ -7,9 +7,9 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "start": "cross env NODE_ENV='prod' node index.js",
-    "dev": "cross env NODE_ENV='dev' nodemon index.js",
-    "test": "cross env NODE_ENV='test' jest --verbose --runInBand"
+    "start": "cross-env NODE_ENV=prod node index.js",
+    "dev": "cross-env NODE_ENV=dev nodemon index.js",
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand"
   },
   "author": "",
   "license": "ISC",
