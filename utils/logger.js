@@ -1,4 +1,6 @@
-const info = (...params) => console.log(...params);
+const info = (...params) => {
+  if (NODE_ENV !== 'test') console.log(...params);
+}
 
 const error = (...params) => console.log(...params);
 

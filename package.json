@@ -7,14 +7,15 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "jest --verbose"
+    "start": "cross env NODE_ENV='prod' node index.js",
+    "dev": "cross env NODE_ENV='dev' nodemon index.js",
+    "test": "cross env NODE_ENV='test' jest --verbose --runInBand"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "mongoose": "^5.10.0"
