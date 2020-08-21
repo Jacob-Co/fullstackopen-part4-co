@@ -4,6 +4,6 @@ Content-Type: application/json
 {
   "title": "Growing Plants the Right Way pt. 2",
   "author": "Green Thumbs",
-  "url": "plants.com",
+  # "url": "plants.com",
   "likes": 8888
 }
