@@ -43,4 +43,15 @@ test('GET /api/blogs returns the correct number of notes', async () => {
 
   const returnBlogs = response.body;
   expect(returnBlogs).toHaveLength(2);
+});
+
+test('GET /api/blogs returns id instead of _id', async () => {
+  const response = await api
+    .get('/api/blogs')
+    .expect(200)
+    .expect('Content-Type', /application\/json/);
+
+  const returnBlogs = response.body;
+  expect(returnBlogs[0].id).toBeDefined();
+  expect(returnBlogs[0]._id).not.toBeDefined();
 })
