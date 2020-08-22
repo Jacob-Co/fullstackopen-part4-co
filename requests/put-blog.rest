@@ -3,5 +3,7 @@ Content-Type: application/json
 
 {
   "title": "PUT",
-  "url": "PUT.com"
+  "author": "Mr. PUT",
+  "url": "PUT.com",
+  "likes": 1
 }
