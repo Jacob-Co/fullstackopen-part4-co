@@ -97,3 +97,29 @@ test('POST /api/blogs will return 0 likes if not are passed in', async () => {
   const returnedBlog = postResponse.body;
   expect(returnedBlog).toHaveProperty('likes', 0);
 });
+
+test('POST /api/blogs with missing title or url', async () => {
+  const noUrl = new Blog({
+    title: 'Snoopy Comics',
+    author: 'Unknown',
+  });
+  const expectedUrlError = 'Blog validation failed: url: Path `url` is required.';
+  const postResponse = await api
+    .post('/api/blogs')
+    .send(noUrl)
+    .expect(400);
+  
+  expect(postResponse.body.error).toEqual(expectedUrlError);
+
+  const noTitle = new Blog ({
+    author: 'Unknown',
+    url: 'comic.com'
+  });
+  const expectedUrlError2 = 'Blog validation failed: title: Path `title` is required.';
+  const postResponse2 = await api
+    .post('/api/blogs')
+    .send(noTitle)
+    .expect(400);
+  
+  expect(postResponse2.body.error).toEqual(expectedUrlError2);
+})
