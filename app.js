@@ -12,7 +12,8 @@ const mongoUrl = config.MONGODB_URI;
 console.log('Connecting to MongoDB...')
 mongoose.connect(mongoUrl, { 
   useNewUrlParser: true,
-  useUnifiedTopology: true 
+  useUnifiedTopology: true,
+  useFindAndModify: false
 })
   .then(() => logger.info('Connected to MongoDB'))
 
