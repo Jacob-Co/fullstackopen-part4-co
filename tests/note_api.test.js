@@ -5,30 +5,15 @@ const mongoose =  require('mongoose');
 // local modules
 const app = require('../app');
 const Blog = require('../models/blogs');
+const testHelper = require('./note_api_test_helpers');
 
 const api = supertest(app);
 
 beforeEach(async () => {
   await Blog.deleteMany({});
-
-  const newBlogs = [
-    {
-      "title": "How to become a data engineer",
-      "author": "Jacob",
-      "url": "example.com",
-      "likes": 100000,
-    },
-    {
-      "title": "How to raise a happy Bunny",
-      "author": "Isabel",
-      "url": "bunny.com",
-      "likes": 9900000,
-    },
-  ];
-
-  const convertedBlogs = newBlogs.map((b) => new Blog(b));
-  const blogsArr = convertedBlogs.map((b) => b.save());
-  await Promise.all(blogsArr);
+  const convertedBlogs = testHelper.initialBlogs.map((b) => new Blog(b));
+  const saveBlogsArr = convertedBlogs.map((b) => b.save());
+  await Promise.all(saveBlogsArr);
 });
 
 afterAll(() => {
@@ -37,14 +22,16 @@ afterAll(() => {
 
 describe('Testing server', () => {
   describe('GET /api/blogs', () => {
-    test('returns the correct number of notes', async () => {
+    test('returns the correct number and correct notes', async () => {
+      const allBlogs = await testHelper.blogsInDb();
       const response = await api
         .get('/api/blogs')
         .expect(200)
         .expect('Content-Type', /application\/json/);
     
       const returnBlogs = response.body;
-      expect(returnBlogs).toHaveLength(2);
+      expect(returnBlogs).toHaveLength(allBlogs.length);
+      expect(returnBlogs).toEqual(allBlogs);
     });
     
     test('returns id instead of _id', async () => {
@@ -68,7 +55,7 @@ describe('Testing server', () => {
         likes: 49930
       });
     
-      const blogsAtStart = await Blog.find({});
+      const blogsAtStart = await testHelper.blogsInDb();
     
       const postResponse = await api
         .post('/api/blogs')
@@ -79,13 +66,12 @@ describe('Testing server', () => {
       const returnedBlog = postResponse.body
       expect(returnedBlog).toHaveProperty('title', 'Snoopy Comics');
     
-      const blogsAtEnd = await Blog.find({});
+      const blogsAtEnd = await testHelper.blogsInDb();
       expect(blogsAtEnd).toHaveLength(blogsAtStart.length + 1);
-      const jsonBlogsAtEnd = blogsAtEnd.map((b) => b.toJSON());
-      expect(jsonBlogsAtEnd).toContainEqual(returnedBlog);
+      expect(blogsAtEnd).toContainEqual(returnedBlog);
     });
     
-    test('will return 0 likes if not are passed in', async () => {
+    test('will return 0 likes if no likes are passed in', async () => {
       const newBlog = new Blog({
         title: 'Snoopy Comics',
         author: 'Unknown',
@@ -131,26 +117,23 @@ describe('Testing server', () => {
 
   describe('DELETE /api/blogs/:id', () => {
     test('DELETE /api/blogs/:id will remove a blog', async () => {
-        const allBlogsStart = await Blog.find({});
-        const convertedBlogsStart = allBlogsStart.map((b) => b.toJSON());
-        const firstBlog = convertedBlogsStart[0];
+        const allBlogsStart = await testHelper.blogsInDb();
+        const firstBlog = allBlogsStart[0];
       
         await api
           .delete(`/api/blogs/${firstBlog.id}`)
           .expect(204);
       
-        const allBlogsEnd = await Blog.find({});
+        const allBlogsEnd = await testHelper.blogsInDb();
         expect(allBlogsEnd).toHaveLength(allBlogsStart.length - 1);
-        const convertedBlogsEnd = allBlogsEnd.map((b) => b.toJSON());
-        expect(convertedBlogsEnd).not.toContainEqual(firstBlog);
+        expect(allBlogsEnd).not.toContainEqual(allBlogsStart);
       });
   });
 
   describe('PUT /api/blogs/:id', () => {
     test('update a blog when given the correct info', async () => {
-      const allBlogsStart = await Blog.find({});
-      const convertedBlogsStart = allBlogsStart.map((b) => b.toJSON());
-      const blogToUpdate = convertedBlogsStart[0];
+      const allBlogsStart = await testHelper.blogsInDb();
+      const blogToUpdate = allBlogsStart[0];
       const updatedBlog = {
         title: 'PUT',
         author: 'Mr. PUT',
@@ -167,15 +150,13 @@ describe('Testing server', () => {
       expect(returnBlog).toHaveProperty('title','PUT');
       expect(returnBlog).toHaveProperty('url','PUT.com');
 
-      const allBlogsEnd = await Blog.find({});
-      const convertedBlogsEnd = allBlogsEnd.map((b) => b.toJSON());
-      expect(convertedBlogsEnd).toContainEqual(returnBlog);
+      const allBlogsEnd = await testHelper.blogsInDb();
+      expect(allBlogsEnd).toContainEqual(returnBlog);
     });
 
     test('if given no title return 400 error', async () => {
-      const allBlogsStart = await Blog.find({});
-      const convertedBlogsStart = allBlogsStart.map((b) => b.toJSON());
-      const blogToUpdate = convertedBlogsStart[0];
+      const allBlogsStart = await testHelper.blogsInDb();
+      const blogToUpdate = allBlogsStart[0];
       const updatedBlog = {
         author: 'Mr. PUT',
         url: 'PUT.com',
@@ -186,15 +167,13 @@ describe('Testing server', () => {
         .send(updatedBlog)
         .expect(400);
       
-      const allBlogsEnd = await Blog.find({});
-      const convertedBlogsEnd = allBlogsEnd.map((b) => b.toJSON());
-      expect(convertedBlogsStart).toEqual(convertedBlogsEnd);
+      const allBlogsEnd = await testHelper.blogsInDb();
+      expect(allBlogsEnd).toEqual(allBlogsStart);
     });
 
     test('if given no title return 400 error', async () => {
-      const allBlogsStart = await Blog.find({});
-      const convertedBlogsStart = allBlogsStart.map((b) => b.toJSON());
-      const blogToUpdate = convertedBlogsStart[0];
+      const allBlogsStart = await testHelper.blogsInDb();
+      const blogToUpdate = allBlogsStart[0];
       const updatedBlog = {
         title: 'PUT',
         author: 'Mr. PUT',
@@ -205,9 +184,8 @@ describe('Testing server', () => {
         .send(updatedBlog)
         .expect(400);
       
-      const allBlogsEnd = await Blog.find({});
-      const convertedBlogsEnd = allBlogsEnd.map((b) => b.toJSON());
-      expect(convertedBlogsStart).toEqual(convertedBlogsEnd);
+      const allBlogsEnd = await testHelper.blogsInDb();
+      expect(allBlogsStart).toEqual(allBlogsEnd);
     });
   });
 });
