@@ -123,3 +123,18 @@ test('POST /api/blogs with missing title or url', async () => {
   
   expect(postResponse2.body.error).toEqual(expectedUrlError2);
 })
+
+test('DELETE /api/blogs/:id will remove a blog', async () => {
+  const allBlogsStart = await Blog.find({});
+  const convertedBlogsStart = allBlogsStart.map((b) => b.toJSON());
+  const firstBlog = convertedBlogsStart[0];
+
+  await api
+    .delete(`/api/blogs/${firstBlog.id}`)
+    .expect(204);
+
+  const allBlogsEnd = await Blog.find({});
+  expect(allBlogsEnd).toHaveLength(allBlogsStart.length - 1);
+  const convertedBlogsEnd = allBlogsEnd.map((b) => b.toJSON());
+  expect(convertedBlogsEnd).not.toContainEqual(firstBlog);
+})
