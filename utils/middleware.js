@@ -11,7 +11,11 @@ const errorHandler = (e, req, res, next) => {
     return res.status(400).json({ error: e.message });
   }
 
+  if (e.name === 'JsonWebTokenError') {
+    return res.status(400).json({ error: e.message });
+  }
+
   next(e);
 };
 
-module.exports = {errorHandler};
+module.exports = { errorHandler };
