@@ -23,4 +23,11 @@ usersRouter.post('/', async (req, res) => {
   res.json(savedUser);
 });
 
+usersRouter.get('/', async (req, res) => {
+  const allUsers = await User
+    .find({})
+    .populate('blogs');
+  res.json(allUsers);
+});
+
 module.exports = usersRouter;
