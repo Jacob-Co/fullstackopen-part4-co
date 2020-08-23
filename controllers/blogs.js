@@ -1,6 +1,7 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blogs');
 const User = require('../models/users');
+const jwt = require('jsonwebtoken');
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog
@@ -12,7 +13,7 @@ blogsRouter.get('/', async (request, response) => {
 const getTokenFrom = (request) => {
   const authorization = request.get('authorization');
   if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    return authorization.subString(7);
+    return authorization.substring(7);
   }
 
   return null;
@@ -20,9 +21,13 @@ const getTokenFrom = (request) => {
 
 blogsRouter.post('/', async (request, response) => {
   const { body } = request;
-  // const token = getTokenFrom(request);
-  // const decodedToken = token.verify(token, process.env.SECRET);
-  const user = await User.findById(body.userId);
+  const token = getTokenFrom(request);
+  const decodedToken = jwt.verify(token, process.env.SECRET);
+  if (!token || !decodedToken) {
+    return response.status(401).json({ error: 'invalid or missintg token' });
+  }
+
+  const user = await User.findById(decodedToken.id);
   const newBlog = new Blog({
     title: body.title,
     author: body.author,
