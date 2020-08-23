@@ -24,6 +24,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(middleware.tokenExtractor);
 app.use('/api/login', loginRouter);
 app.use('/api/blogs', blogsRouter);
 app.use('/api/users', usersRouter);

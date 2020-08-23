@@ -10,24 +10,14 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs);
 });
 
-const getTokenFrom = (request) => {
-  const authorization = request.get('authorization');
-  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    return authorization.substring(7);
-  }
-
-  return null;
-};
-
 blogsRouter.post('/', async (request, response) => {
   const { body } = request;
-  const token = getTokenFrom(request);
-  const decodedToken = jwt.verify(token, process.env.SECRET);
-  if (!token || !decodedToken) {
+  const { token } = request;
+  if (!token) {
     return response.status(401).json({ error: 'invalid or missintg token' });
   }
 
-  const user = await User.findById(decodedToken.id);
+  const user = await User.findById(token.id);
   const newBlog = new Blog({
     title: body.title,
     author: body.author,

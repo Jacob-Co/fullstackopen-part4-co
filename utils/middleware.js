@@ -1,10 +1,12 @@
-const logger = require('./logger')
+const jwt = require('jsonwebtoken');
+
+const logger = require('./logger');
 
 const errorHandler = (e, req, res, next) => {
   logger.error(e.message);
 
   if (e.name === 'CastError') {
-    return res.status(400).send({ error: 'malformatted id '});
+    return res.status(400).send({ error: 'malformatted id' });
   }
 
   if (e.name === 'ValidationError') {
@@ -18,4 +20,21 @@ const errorHandler = (e, req, res, next) => {
   next(e);
 };
 
-module.exports = { errorHandler };
+const getTokenFrom = (request) => {
+  const authorization = request.get('authorization');
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7);
+  }
+
+  return null;
+};
+
+const tokenExtractor = (req, res, next) => {
+  const encodedToken = getTokenFrom(req);
+  if (!encodedToken) return next();
+  const decodedToken = jwt.verify(encodedToken, process.env.SECRET);
+  req.token = decodedToken;
+  next();
+};
+
+module.exports = { errorHandler, tokenExtractor };
