@@ -9,8 +9,19 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs);
 });
 
+const getTokenFrom = (request) => {
+  const authorization = request.get('authorization');
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.subString(7);
+  }
+
+  return null;
+};
+
 blogsRouter.post('/', async (request, response) => {
   const { body } = request;
+  // const token = getTokenFrom(request);
+  // const decodedToken = token.verify(token, process.env.SECRET);
   const user = await User.findById(body.userId);
   const newBlog = new Blog({
     title: body.title,
