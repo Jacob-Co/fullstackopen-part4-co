@@ -1,7 +1,6 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blogs');
 const User = require('../models/users');
-const jwt = require('jsonwebtoken');
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog
@@ -14,7 +13,7 @@ blogsRouter.post('/', async (request, response) => {
   const { body } = request;
   const { token } = request;
   if (!token) {
-    return response.status(401).json({ error: 'invalid or missintg token' });
+    return response.status(401).json({ error: 'invalid or missing token' });
   }
 
   const user = await User.findById(token.id);

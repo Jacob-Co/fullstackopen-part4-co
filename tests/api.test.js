@@ -2,35 +2,46 @@
 // 3rd party modules
 const supertest = require('supertest');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
 // local modules
 const app = require('../app');
 const Blog = require('../models/blogs');
 const User = require('../models/users');
-const testHelper = require('./note_api_test_helpers');
+const testHelper = require('./api_test_helpers');
 
 const api = supertest(app);
 
 describe('Testing blogs', () => {
   beforeEach(async () => {
+    await testHelper.deleteAllUsersInDb();
+    await testHelper.createUserInDb();
     await Blog.deleteMany({});
-    const convertedBlogs = testHelper.initialBlogs.map((b) => new Blog(b));
+
+    const user = await User.findOne({});
+    const convertedBlogs = testHelper.initialBlogs.map((b) => {
+      b.user = user._id;
+      return new Blog(b);
+    });
+
     const saveBlogsArr = convertedBlogs.map((b) => b.save());
     await Promise.all(saveBlogsArr);
   });
 
   describe('GET /api/blogs', () => {
     test('returns the correct number and correct notes', async () => {
-      const allBlogs = await testHelper.blogsInDb();
+      const allBlogs = await Blog
+        .find({})
+        .populate('user', { username: 1, name: 1 });
+
+      const transformedBlogs = allBlogs.map((b) => b.toJSON());
       const response = await api
         .get('/api/blogs')
         .expect(200)
         .expect('Content-Type', /application\/json/);
 
       const returnBlogs = response.body;
-      expect(returnBlogs).toHaveLength(allBlogs.length);
-      expect(returnBlogs).toEqual(allBlogs);
+      expect(returnBlogs).toHaveLength(transformedBlogs.length);
+      expect(returnBlogs).toEqual(transformedBlogs);
     });
 
     test('returns id instead of _id', async () => {
@@ -55,19 +66,26 @@ describe('Testing blogs', () => {
       });
 
       const blogsAtStart = await testHelper.blogsInDb();
+      const webToken = await testHelper.getWebTokenOfFirstUser();
 
       const postResponse = await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${webToken}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/);
 
-      const returnedBlog = postResponse.body
+      const returnedBlog = postResponse.body;
       expect(returnedBlog).toHaveProperty('title', 'Snoopy Comics');
 
       const blogsAtEnd = await testHelper.blogsInDb();
+      const transformedBlogs = blogsAtEnd.map((b) => {
+        b.user = b.user.toString();
+        return b;
+      });
+
       expect(blogsAtEnd).toHaveLength(blogsAtStart.length + 1);
-      expect(blogsAtEnd).toContainEqual(returnedBlog);
+      expect(transformedBlogs[2]).toEqual(returnedBlog);
     });
 
     test('will return 0 likes if no likes are passed in', async () => {
@@ -77,8 +95,11 @@ describe('Testing blogs', () => {
         url: 'snoopy.com',
       });
 
+      const webToken = await testHelper.getWebTokenOfFirstUser();
+
       const postResponse = await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${webToken}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/);
@@ -87,30 +108,55 @@ describe('Testing blogs', () => {
       expect(returnedBlog).toHaveProperty('likes', 0);
     });
 
-    test('with missing title or url', async () => {
+    test('return error 400 with missing url', async () => {
       const noUrl = new Blog({
         title: 'Snoopy Comics',
         author: 'Unknown',
       });
+      const webToken = await testHelper.getWebTokenOfFirstUser();
+
       const expectedUrlError = 'Blog validation failed: url: Path `url` is required.';
       const postResponse = await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${webToken}`)
         .send(noUrl)
         .expect(400);
 
       expect(postResponse.body.error).toEqual(expectedUrlError);
+    });
 
+    test('return error 400 with missing title', async () => {
       const noTitle = new Blog({
         author: 'Unknown',
         url: 'comic.com',
       });
+      const webToken = await testHelper.getWebTokenOfFirstUser();
+
       const expectedUrlError2 = 'Blog validation failed: title: Path `title` is required.';
       const postResponse2 = await api
         .post('/api/blogs')
+        .set('Authorization', `bearer ${webToken}`)
         .send(noTitle)
         .expect(400);
 
       expect(postResponse2.body.error).toEqual(expectedUrlError2);
+    });
+
+    test('return error 401 when there is no token provided', async () => {
+      const newBlog = new Blog({
+        title: 'Snoopy Comics',
+        author: 'Unknown',
+        url: 'snoopy.com',
+        likes: 49930,
+      });
+
+      const postResponse = await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(401)
+        .expect('Content-Type', /application\/json/);
+
+      expect(postResponse.body).toHaveProperty('error', 'invalid or missing token');
     });
   });
 
@@ -119,12 +165,15 @@ describe('Testing blogs', () => {
       const allBlogsStart = await testHelper.blogsInDb();
       const firstBlog = allBlogsStart[0];
 
+      const webToken = await testHelper.getWebTokenOfFirstUser();
+
       await api
         .delete(`/api/blogs/${firstBlog.id}`)
+        .set('Authorization', `bearer ${webToken}`)
         .expect(204);
       const allBlogsEnd = await testHelper.blogsInDb();
       expect(allBlogsEnd).toHaveLength(allBlogsStart.length - 1);
-      expect(allBlogsEnd).not.toContainEqual(allBlogsStart);
+      expect(allBlogsEnd).not.toEqual(allBlogsStart);
     });
   });
 
@@ -136,7 +185,7 @@ describe('Testing blogs', () => {
         title: 'PUT',
         author: 'Mr. PUT',
         url: 'PUT.com',
-        likes: 1
+        likes: 1,
       };
       const putResponse = await api
         .put(`/api/blogs/${blogToUpdate.id}`)
@@ -145,11 +194,15 @@ describe('Testing blogs', () => {
         .expect('Content-Type', /application\/json/);
 
       const returnBlog = putResponse.body;
-      expect(returnBlog).toHaveProperty('title','PUT');
-      expect(returnBlog).toHaveProperty('url','PUT.com');
+      expect(returnBlog).toHaveProperty('title', 'PUT');
+      expect(returnBlog).toHaveProperty('url', 'PUT.com');
 
       const allBlogsEnd = await testHelper.blogsInDb();
-      expect(allBlogsEnd).toContainEqual(returnBlog);
+      const transformedBlogsEnd = allBlogsEnd.map((b) => {
+        b.user = b.user.toString();
+        return b;
+      });
+      expect(transformedBlogsEnd).toContainEqual(returnBlog);
     });
 
     test('if given no title return 400 error', async () => {
@@ -190,12 +243,8 @@ describe('Testing blogs', () => {
 
 describe('Testing users', () => {
   beforeEach(async () => {
-    await User.deleteMany({});
-
-    const passwordHash = await bcrypt.hash('test123', 10);
-    const newUser = new User({ username: 'test', passwordHash });
-
-    await newUser.save();
+    await testHelper.deleteAllUsersInDb();
+    await testHelper.createUserInDb();
   });
 
   describe('POST /api/users', () => {
